@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/runaphox/cgol/conway"
 
@@ -44,14 +45,25 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 	}
 }
 
-func main() {
+func handleEvents(quit *bool) {
+	for {
+		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
+			switch ev.(type) {
+			case *sdl.QuitEvent:
+				*quit = true
+			}
+		}
+	}
+}
 
+func main() {
 	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 		panic(err)
 	}
 	defer sdl.Quit()
 	w, err := sdl.CreateWindow("title", sdl.WINDOWPOS_UNDEFINED,
-		sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN)
+		sdl.WINDOWPOS_UNDEFINED, width, height,
+		sdl.WINDOW_SHOWN|sdl.WINDOW_FULLSCREEN)
 
 	if err != nil {
 		panic(err)
@@ -76,13 +88,9 @@ func main() {
 	tab[4][11] = 1
 
 	quit := false
-	for !quit {
-		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
-			switch ev.(type) {
-			case *sdl.QuitEvent:
-				quit = true
-			}
-		}
+	go handleEvents(&quit)
+	for i := 0; !quit; i++ {
+		start := time.Now()
 
 		r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
 		r.Clear()
@@ -91,6 +99,8 @@ func main() {
 		r.Present()
 
 		tab = conway.Update(tab)
+
+		time.Sleep(start.Sub(time.Now()) + 128*time.Millisecond)
 	}
 }
 
