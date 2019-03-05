@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
+
+	"github.com/runaphox/cgol/conway"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -16,25 +17,6 @@ const (
 	popul    = columns * rows
 )
 
-func update(tab [rows][columns]byte) [rows][columns]byte {
-	buf := tab
-
-	for i, row := range tab {
-		for j := range row {
-			cnt := countNeighbor(tab, j, i)
-
-			if tab[i][j] == 0 && cnt == 3 {
-				buf[i][j] = 1
-			} else if tab[i][j] == 1 && (cnt < 2 || cnt > 3) {
-				buf[i][j] = 0
-			}
-
-		}
-	}
-
-	return buf
-}
-
 func drawGrid(r *sdl.Renderer) {
 	r.SetDrawColor(0x66, 0x66, 0x66, 0xff)
 	for i := int32(cellSize); i <= height-cellSize; i += cellSize {
@@ -46,7 +28,7 @@ func drawGrid(r *sdl.Renderer) {
 	}
 }
 
-func drawPop(r *sdl.Renderer, tab [rows][columns]byte) {
+func drawPop(r *sdl.Renderer, tab [][]byte) {
 	r.SetDrawColor(0x00, 0x35, 0xdb, 0xff)
 	for i := int32(0); i < rows; i++ {
 		for j := int32(0); j < columns; j++ {
@@ -60,23 +42,6 @@ func drawPop(r *sdl.Renderer, tab [rows][columns]byte) {
 			}
 		}
 	}
-}
-
-func countNeighbor(tab [rows][columns]byte, x, y int) (n int) {
-	infY := int(math.Max(0, float64(y-1)))
-	supY := int(math.Min(float64(len(tab)-1), float64(y+1)))
-	infX := int(math.Max(0, float64(x-1)))
-	supX := int(math.Min(float64(len(tab[0])-1), float64(x+1)))
-
-	for i := infY; i <= supY; i++ {
-		for j := infX; j <= supX; j++ {
-			n += int(tab[i][j])
-		}
-	}
-
-	n -= int(tab[y][x])
-
-	return
 }
 
 func main() {
@@ -99,8 +64,12 @@ func main() {
 	}
 	defer r.Destroy()
 
-	var tab [rows][columns]byte
+	tab := make([][]byte, rows)
+	for i := range tab {
+		tab[i] = make([]byte, columns)
+	}
 
+	tab[5][3] = 1
 	tab[4][9] = 1
 	tab[4][10] = 1
 	tab[4][10] = 1
@@ -121,7 +90,7 @@ func main() {
 		drawGrid(r)
 		r.Present()
 
-		tab = update(tab)
+		tab = conway.Update(tab)
 	}
 }
 
