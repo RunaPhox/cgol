@@ -26,14 +26,28 @@ func Update(tab [][]byte) [][]byte {
 }
 
 func countNeighbor(tab [][]byte, x, y int) (n int) {
-	n += int(tab[(y-1)%len(tab)][x])
-	n += int(tab[(y+1)%len(tab)][x])
-	n += int(tab[(y-1)%len(tab)][(x-1)%len(tab)])
-	n += int(tab[(y+1)%len(tab)][(x-1)%len(tab)])
-	n += int(tab[y][(x-1)%len(tab)])
-	n += int(tab[y][(x+1)%len(tab)])
-	n += int(tab[(y-1)%len(tab)][(x+1)%len(tab)])
-	n += int(tab[(y+1)%len(tab)][(x+1)%len(tab)])
+	var indY, indX int
+	for i := y - 1; i <= y+1; i++ {
+		for j := x - 1; j <= x+1; j++ {
+			indY = i
+			indX = j
+
+			if indY < 0 {
+				indY = len(tab) + indY
+			} else {
+				indY = indY % len(tab)
+			}
+
+			if indX < 0 {
+				indX = len(tab[0]) + indX
+			} else {
+				indX = indX % len(tab[0])
+			}
+			n += int(tab[indY][indX])
+		}
+	}
+
+	n -= int(tab[y][x])
 
 	return
 }
