@@ -3,17 +3,37 @@ package main
 import (
 	"fmt"
 	"math"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
-const n = 40
+const (
+	size   = 40
+	width  = 1920
+	height = 1080
+)
 
-func printTab(tab [n][n]byte) {
-	for i := 0; i < n; i++ {
+func newTab() [size][size]byte {
+	return [size][size]byte{
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 1, 0, 1, 0, 0, 0},
+		{0, 0, 0, 0, 1, 1, 0, 0, 0},
+		{0, 0, 0, 0, 1, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+	}
+}
+
+func printTab(tab [size][size]byte) {
+	for i := 0; i < size; i++ {
 		fmt.Println(tab[i])
 	}
 }
 
-func update(tab [n][n]byte) [n][n]byte {
+func update(tab [size][size]byte) [size][size]byte {
 	buf := tab
 
 	for i, row := range tab {
@@ -33,7 +53,7 @@ func update(tab [n][n]byte) [n][n]byte {
 	return buf
 }
 
-func countNeighbor(tab [n][n]byte, x, y int) (n int) {
+func countNeighbor(tab [size][size]byte, x, y int) (n int) {
 	infY := int(math.Max(0, float64(y-1)))
 	supY := int(math.Min(float64(len(tab)-1), float64(y+1)))
 	infX := int(math.Max(0, float64(x-1)))
@@ -51,23 +71,37 @@ func countNeighbor(tab [n][n]byte, x, y int) (n int) {
 }
 
 func main() {
-	tab := [n][n]byte{
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 1, 0, 1, 0, 0, 0},
-		{0, 0, 0, 0, 1, 1, 0, 0, 0},
-		{0, 0, 0, 0, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
+		panic(err)
 	}
+	defer sdl.Quit()
+	w, err := sdl.CreateWindow("title", sdl.WINDOWPOS_UNDEFINED,
+		sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN)
 
-	for {
-		tab = update(tab)
-		printTab(tab)
+	if err != nil {
+		panic(err)
+	}
+	defer w.Destroy()
 
-		fmt.Scanln()
+	r, err := sdl.CreateRenderer(w, -1, sdl.RENDERER_ACCELERATED)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Destroy()
+
+	tab := newTab()
+	tab = update(tab)
+	printTab(tab)
+
+	quit := false
+	for !quit {
+		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
+			switch ev.(type) {
+			case *sdl.QuitEvent:
+				quit = true
+			}
+		}
 	}
 }
 
