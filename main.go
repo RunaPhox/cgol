@@ -1,75 +1,76 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
-const size = 10
+const n = 40
 
-var oldG [size][size]byte
-var newG [size][size]byte
-
-func setup() {
-	oldG = [size][size]byte{
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 1, 1, 1, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+func printTab(tab [n][n]byte) {
+	for i := 0; i < n; i++ {
+		fmt.Println(tab[i])
 	}
 }
 
-func nextGen() {
-	newG = oldG
-	for i, row := range oldG {
-		if i == 0 || i == len(oldG)-1 {
-			continue
-		}
+func update(tab [n][n]byte) [n][n]byte {
+	buf := tab
 
+	for i, row := range tab {
 		for j := range row {
-			if j == 0 || j == len(row)-1 {
-				continue
+			cnt := countNeighbor(tab, j, i)
+
+			if tab[i][j] == 0 && cnt == 3 {
+				buf[i][j] = 1
+			}
+			if tab[i][j] == 1 && (cnt < 2 || cnt > 3) {
+				buf[i][j] = 0
 			}
 
-			cont := byte(0)
-			for ix := i - 1; ix <= i+1; ix++ {
-				for jx := j - 1; jx <= j+1; jx++ {
-					cont += oldG[ix][jx]
-				}
-			}
-			cont -= oldG[i][j]
-
-			/*
-				if cont != 0 {
-					fmt.Printf("vecinos de (%d, %d) = %d\n", j, i, cont)
-				}
-			*/
-
-			if oldG[i][j] == 0 && cont == 3 {
-				newG[i][j] = 1
-			}
-			if oldG[i][j] > 0 && (cont < 2 || cont > 3) {
-				newG[i][j] = 0
-			}
 		}
 	}
 
-	oldG = newG
+	return buf
+}
+
+func countNeighbor(tab [n][n]byte, x, y int) (n int) {
+	infY := int(math.Max(0, float64(y-1)))
+	supY := int(math.Min(float64(len(tab)-1), float64(y+1)))
+	infX := int(math.Max(0, float64(x-1)))
+	supX := int(math.Min(float64(len(tab[0])-1), float64(x+1)))
+
+	for i := infY; i <= supY; i++ {
+		for j := infX; j <= supX; j++ {
+			n += int(tab[i][j])
+		}
+	}
+
+	n -= int(tab[y][x])
+
+	return
 }
 
 func main() {
-	setup()
+	tab := [n][n]byte{
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 1, 0, 1, 0, 0, 0},
+		{0, 0, 0, 0, 1, 1, 0, 0, 0},
+		{0, 0, 0, 0, 1, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0},
+	}
 
 	for {
-		for i := 0; i < size; i++ {
-			fmt.Println(oldG[i])
-		}
-		nextGen()
+		tab = update(tab)
+		printTab(tab)
 
-		x := ""
-		fmt.Scanf("%s", &x)
+		fmt.Scanln()
 	}
+}
+
+func printSlice(s []int) {
+	fmt.Printf("len: %d, cap: %d %v\n", len(s), cap(s), s)
 }
