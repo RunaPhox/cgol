@@ -105,8 +105,12 @@ func main() {
 			}
 		}
 
-		r.SetDrawColor(0x11, 0x11, 0x11, 0xff)
+		r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
 		r.Clear()
+		r.SetDrawColor(0x50, 0x00, 0x20, 0xff)
+		r.DrawRect(&sdl.Rect{X: 200, Y: 200, W: 500, H: 500})
+		r.SetDrawColor(0x50, 0x70, 0x00, 0xff)
+		r.FillRect(&sdl.Rect{X: 900, Y: 800, W: 200, H: 100})
 		r.Present()
 	}
 }
