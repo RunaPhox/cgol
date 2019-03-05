@@ -11,18 +11,19 @@ func setup() {
 	oldG = [size][size]byte{
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
 		{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
 }
 
 func nextGen() {
+	newG = oldG
 	for i, row := range oldG {
 		if i == 0 || i == len(oldG)-1 {
 			continue
@@ -41,9 +42,11 @@ func nextGen() {
 			}
 			cont -= oldG[i][j]
 
-			if cont != 0 {
-				fmt.Printf("vecinos de (%d, %d) = %d\n", j, i, cont)
-			}
+			/*
+				if cont != 0 {
+					fmt.Printf("vecinos de (%d, %d) = %d\n", j, i, cont)
+				}
+			*/
 
 			if oldG[i][j] == 0 && cont == 3 {
 				newG[i][j] = 1
@@ -54,27 +57,19 @@ func nextGen() {
 		}
 	}
 
-	fmt.Println("newG before assignment")
-	for _, v := range newG {
-		fmt.Println(v)
-	}
 	oldG = newG
 }
 
 func main() {
 	setup()
-	fmt.Println("oldG before nextGen()")
-	for i := 0; i < size; i++ {
-		fmt.Println(oldG[i])
-	}
-	fmt.Println()
-	nextGen()
-	fmt.Println()
 
-	fmt.Println("oldG after nextGen()")
-	for i := 0; i < size; i++ {
-		fmt.Println(oldG[i])
+	for {
+		for i := 0; i < size; i++ {
+			fmt.Println(oldG[i])
+		}
+		nextGen()
+
+		x := ""
+		fmt.Scanf("%s", &x)
 	}
-	//x := ""
-	//fmt.Scanf("%s", &x)
 }
