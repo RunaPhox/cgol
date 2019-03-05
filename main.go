@@ -81,15 +81,15 @@ func main() {
 		tab[i] = make([]byte, columns)
 	}
 
-	tab[5][3] = 1
-	tab[4][9] = 1
 	tab[4][10] = 1
-	tab[4][10] = 1
-	tab[4][11] = 1
+	tab[4][12] = 1
+	tab[5][11] = 1
+	tab[5][12] = 1
+	tab[6][11] = 1
 
 	quit := false
 	go handleEvents(&quit)
-	for i := 0; !quit; i++ {
+	for !quit {
 		start := time.Now()
 
 		r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
