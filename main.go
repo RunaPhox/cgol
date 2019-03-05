@@ -8,32 +8,15 @@ import (
 )
 
 const (
-	size   = 40
-	width  = 1920
-	height = 1080
+	width    = 1920
+	height   = 1080
+	cellSize = 40
+	columns  = width / cellSize
+	rows     = height / cellSize
+	popul    = columns * rows
 )
 
-func newTab() [size][size]byte {
-	return [size][size]byte{
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 1, 0, 1, 0, 0, 0},
-		{0, 0, 0, 0, 1, 1, 0, 0, 0},
-		{0, 0, 0, 0, 1, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	}
-}
-
-func printTab(tab [size][size]byte) {
-	for i := 0; i < size; i++ {
-		fmt.Println(tab[i])
-	}
-}
-
-func update(tab [size][size]byte) [size][size]byte {
+func update(tab [rows][columns]byte) [rows][columns]byte {
 	buf := tab
 
 	for i, row := range tab {
@@ -42,8 +25,7 @@ func update(tab [size][size]byte) [size][size]byte {
 
 			if tab[i][j] == 0 && cnt == 3 {
 				buf[i][j] = 1
-			}
-			if tab[i][j] == 1 && (cnt < 2 || cnt > 3) {
+			} else if tab[i][j] == 1 && (cnt < 2 || cnt > 3) {
 				buf[i][j] = 0
 			}
 
@@ -53,7 +35,34 @@ func update(tab [size][size]byte) [size][size]byte {
 	return buf
 }
 
-func countNeighbor(tab [size][size]byte, x, y int) (n int) {
+func drawGrid(r *sdl.Renderer) {
+	r.SetDrawColor(0x66, 0x66, 0x66, 0xff)
+	for i := int32(cellSize); i <= height-cellSize; i += cellSize {
+		r.DrawLine(0, i, width, i)
+	}
+
+	for i := int32(cellSize); i <= width-cellSize; i += cellSize {
+		r.DrawLine(i, 0, i, height)
+	}
+}
+
+func drawPop(r *sdl.Renderer, tab [rows][columns]byte) {
+	r.SetDrawColor(0x00, 0x35, 0xdb, 0xff)
+	for i := int32(0); i < rows; i++ {
+		for j := int32(0); j < columns; j++ {
+			if tab[i][j] == 1 {
+				r.FillRect(&sdl.Rect{
+					X: j * cellSize,
+					Y: i * cellSize,
+					W: cellSize,
+					H: cellSize,
+				})
+			}
+		}
+	}
+}
+
+func countNeighbor(tab [rows][columns]byte, x, y int) (n int) {
 	infY := int(math.Max(0, float64(y-1)))
 	supY := int(math.Min(float64(len(tab)-1), float64(y+1)))
 	infX := int(math.Max(0, float64(x-1)))
@@ -90,11 +99,12 @@ func main() {
 	}
 	defer r.Destroy()
 
-	/*
-		tab := newTab()
-		tab = update(tab)
-		printTab(tab)
-	*/
+	var tab [rows][columns]byte
+
+	tab[4][9] = 1
+	tab[4][10] = 1
+	tab[4][10] = 1
+	tab[4][11] = 1
 
 	quit := false
 	for !quit {
@@ -107,11 +117,11 @@ func main() {
 
 		r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
 		r.Clear()
-		r.SetDrawColor(0x50, 0x00, 0x20, 0xff)
-		r.DrawRect(&sdl.Rect{X: 200, Y: 200, W: 500, H: 500})
-		r.SetDrawColor(0x50, 0x70, 0x00, 0xff)
-		r.FillRect(&sdl.Rect{X: 900, Y: 800, W: 200, H: 100})
+		drawPop(r, tab)
+		drawGrid(r)
 		r.Present()
+
+		tab = update(tab)
 	}
 }
 
