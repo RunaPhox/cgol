@@ -46,7 +46,7 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 }
 
 func handleEvents(quit *bool) {
-	for {
+	for !*quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
 			switch ev.(type) {
 			case *sdl.QuitEvent:
