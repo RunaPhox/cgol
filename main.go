@@ -90,9 +90,11 @@ func main() {
 	}
 	defer r.Destroy()
 
-	tab := newTab()
-	tab = update(tab)
-	printTab(tab)
+	/*
+		tab := newTab()
+		tab = update(tab)
+		printTab(tab)
+	*/
 
 	quit := false
 	for !quit {
@@ -102,6 +104,10 @@ func main() {
 				quit = true
 			}
 		}
+
+		r.SetDrawColor(0x11, 0x11, 0x11, 0xff)
+		r.Clear()
+		r.Present()
 	}
 }
 
