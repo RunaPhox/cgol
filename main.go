@@ -53,28 +53,40 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 	}
 }
 
-func toggleCell(tab *[][]byte, x, y int32) {
+func tabIndex(x, y int32) (int32, int32) {
 	yInd := y / cellSize
 	xInd := x / cellSize
-	if (*tab)[yInd][xInd] == 0 {
-		(*tab)[yInd][xInd] = 1
+	return xInd, yInd
+}
+
+func toggleCell(tab *[][]byte, x, y int32) {
+	if (*tab)[y][x] == 0 {
+		(*tab)[y][x] = 1
 	} else {
-		(*tab)[yInd][xInd] = 0
+		(*tab)[y][x] = 0
 	}
 }
 
 func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte) {
-	if m.Type == sdl.MOUSEBUTTONDOWN {
-		toggleCell(tab, m.X, m.Y)
+	if m.State == sdl.PRESSED {
+		x, y := tabIndex(m.X, m.Y)
+		toggleCell(tab, x, y)
 	}
 }
 
-func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte) {
-	//_, _, t := sdl.GetMouseState()
-
+func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
+                         lastX, lastY *int32) {
+	if _, _, t := sdl.GetMouseState(); t == sdl.PRESSED {
+		x, y := tabIndex(m.X, m.Y)
+		//if x != *lastX && y != *lastY {
+			toggleCell(tab, x, y)
+			*lastX, *lastY = x, y
+		//}
+	}
 }
 
 func handleEvents(quit, pause *bool, tab *[][]byte) {
+	var lastX, lastY int32 = -1, -1
 	for !*quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
 			switch e := ev.(type) {
@@ -83,7 +95,7 @@ func handleEvents(quit, pause *bool, tab *[][]byte) {
 			case *sdl.MouseButtonEvent:
 				mouseButtonHandling(e, tab)
 			case *sdl.MouseMotionEvent:
-				mouseMotionHandling(e, tab)
+				mouseMotionHandling(e, tab, &lastX, &lastY)
 			case *sdl.KeyboardEvent:
 				if e.Keysym.Sym == sdl.K_SPACE &&
 					e.Type == sdl.KEYUP {
