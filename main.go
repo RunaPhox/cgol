@@ -19,12 +19,23 @@ const (
 	popul    = columns * rows
 )
 
+type sdlContext struct {
+	w *sdl.Window
+	r *sdl.Renderer
+}
+
+type stage struct {
+	quit  bool
+	pause bool
+	tab   [][]byte
+}
+
 func randColor(rgb chan uint8) {
-	for v := 0.0;; v+=0.01 {
+	for v := 0.0; ; v += 0.01 {
 		sin, cos, sin2 := math.Sin(v), math.Cos(v), math.Sin(2*v)
-		rgb <- uint8(sin*sin*255)
-		rgb <- uint8(sin2*sin2*255)
-		rgb <- uint8(cos*cos*255)
+		rgb <- uint8(sin * sin * 255)
+		rgb <- uint8(sin2 * sin2 * 255)
+		rgb <- uint8(cos * cos * 255)
 	}
 }
 
@@ -49,7 +60,7 @@ func drawGrid(r *sdl.Renderer) {
 }
 
 func drawPop(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
-	re, gr, bl := <- rgb, <- rgb, <- rgb
+	re, gr, bl := <-rgb, <-rgb, <-rgb
 	r.SetDrawColor(re, gr, bl, 0xff)
 	for i := int32(0); i < rows; i++ {
 		for j := int32(0); j < columns; j++ {
@@ -104,7 +115,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte) {
 }
 
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
-                         lastX, lastY *int32) {
+	lastX, lastY *int32) {
 	if _, _, t := sdl.GetMouseState(); t == sdl.PRESSED {
 		x, y := tabIndex(m.X, m.Y)
 		if x != *lastX || y != *lastY {
@@ -114,28 +125,28 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	}
 }
 
-func handleEvents(w *sdl.Window, quit, pause *bool, tab *[][]byte) {
+func handleEvents(w *sdl.Window, game *stage) {
 	var lastX, lastY int32 = -1, -1
-	for !*quit {
+	for !game.quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
 			switch e := ev.(type) {
 			case *sdl.QuitEvent:
-				*quit = true
+				game.quit = true
 			case *sdl.MouseButtonEvent:
-				mouseButtonHandling(e, tab)
+				mouseButtonHandling(e, &game.tab)
 			case *sdl.MouseMotionEvent:
-				mouseMotionHandling(e, tab, &lastX, &lastY)
+				mouseMotionHandling(e, &game.tab, &lastX, &lastY)
 			case *sdl.KeyboardEvent:
 				if e.Type == sdl.KEYUP {
 					switch e.Keysym.Sym {
 					case sdl.K_SPACE:
-						*pause = !*pause
+						game.pause = !game.pause
 					case sdl.K_c:
-						*tab = newTab(rows, columns)
+						game.tab = newTab(rows, columns)
 					case sdl.K_f:
 						toggleFullscreen(w)
 					case sdl.K_q:
-						*quit = true
+						game.quit = true
 					}
 				}
 			}
@@ -163,13 +174,13 @@ func initSdl() (*sdl.Window, *sdl.Renderer, error) {
 	return w, r, nil
 }
 
-func closeSdl(w *sdl.Window, r *sdl.Renderer) {
-	if r != nil {
-		r.Destroy()
+func closeSdl(wrap sdlContext) {
+	if wrap.r != nil {
+		wrap.r.Destroy()
 	}
 
-	if w != nil {
-		w.Destroy()
+	if wrap.w != nil {
+		wrap.w.Destroy()
 	}
 
 	sdl.Quit()
@@ -185,25 +196,27 @@ func newTab(row, col int) [][]byte {
 }
 
 func main() {
-	w, r, err := initSdl()
+	var wrap sdlContext
+	var err error
+
+	wrap.w, wrap.r, err = initSdl()
 	if err != nil {
 		panic(err)
 	}
-	defer closeSdl(w, r)
+	defer closeSdl(wrap)
 
-	tab := newTab(rows, columns)
+	game := stage{quit: false, pause: true, tab: newTab(rows, columns)}
 
-	quit, pause := false, true
 	rgb := make(chan uint8, 3)
 	go randColor(rgb)
-	go handleEvents(w, &quit, &pause, &tab)
+	go handleEvents(wrap.w, &game)
 
-	for !quit {
+	for !game.quit {
 		start := time.Now()
 
-		draw(r, tab, rgb)
-		if !pause {
-			tab = conway.Update(tab)
+		draw(wrap.r, game.tab, rgb)
+		if !game.pause {
+			game.tab = conway.Update(game.tab)
 		}
 
 		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)
