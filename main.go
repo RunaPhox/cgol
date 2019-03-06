@@ -12,7 +12,7 @@ import (
 const (
 	width    = 1920
 	height   = 1080
-	cellSize = 40
+	cellSize = 20
 	columns  = width / cellSize
 	rows     = height / cellSize
 	popul    = columns * rows
@@ -30,8 +30,12 @@ func drawGrid(r *sdl.Renderer) {
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
 	x, y, _ := sdl.GetMouseState()
-	r.DrawRect(&sdl.Rect{X:x/cellSize*cellSize, Y:y/cellSize*cellSize, 
-		                 W:cellSize, H:cellSize})
+	r.DrawRect(&sdl.Rect{
+		X: x / cellSize * cellSize,
+		Y: y / cellSize * cellSize,
+		W: cellSize,
+		H: cellSize,
+	})
 }
 
 func drawPop(r *sdl.Renderer, tab [][]byte) {
@@ -50,23 +54,29 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 	}
 }
 
+func mouseHandling(m *sdl.MouseButtonEvent, tab *[][]byte) {
+	if m.Type == sdl.MOUSEBUTTONDOWN {
+		yInd := m.Y / cellSize
+		xInd := m.X / cellSize
+		if (*tab)[yInd][xInd] == 0 {
+			(*tab)[yInd][xInd] = 1
+		} else {
+			(*tab)[yInd][xInd] = 0
+		}
+	}
+}
+
 func handleEvents(quit, pause *bool, tab *[][]byte) {
 	for !*quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
-			switch e:=ev.(type) {
+			switch e := ev.(type) {
 			case *sdl.QuitEvent:
 				*quit = true
 			case *sdl.MouseButtonEvent:
-				if e.Type == sdl.MOUSEBUTTONDOWN {
-					fmt.Printf("Hice click en (%d,%d)\n", e.X/cellSize, e.Y/cellSize)
-					if (*tab)[e.Y/cellSize][e.X/cellSize] == 0 {
-						(*tab)[e.Y/cellSize][e.X/cellSize] = 1
-					} else {
-						(*tab)[e.Y/cellSize][e.X/cellSize] = 0
-					}
-				}
+				mouseHandling(e, tab)
 			case *sdl.KeyboardEvent:
-				if e.Keysym.Sym == sdl.K_SPACE && e.Type == sdl.KEYUP {
+				if e.Keysym.Sym == sdl.K_SPACE &&
+					e.Type == sdl.KEYUP {
 					*pause = !*pause
 				}
 			}
@@ -98,12 +108,6 @@ func main() {
 	for i := range tab {
 		tab[i] = make([]byte, columns)
 	}
-
-	tab[4][10] = 1
-	tab[4][12] = 1
-	tab[5][11] = 1
-	tab[5][12] = 1
-	tab[6][11] = 1
 
 	quit := false
 	pause := true
