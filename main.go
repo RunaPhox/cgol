@@ -53,6 +53,15 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 	}
 }
 
+func toggleFullscreen(w *sdl.Window) {
+	fs := w.GetFlags()&sdl.WINDOW_FULLSCREEN != 0
+	if fs {
+		w.SetFullscreen(0)
+	} else {
+		w.SetFullscreen(sdl.WINDOW_FULLSCREEN)
+	}
+}
+
 func toggleCell(tab *[][]byte, x, y int32) {
 	yInd := y / cellSize
 	xInd := x / cellSize
@@ -74,7 +83,7 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte) {
 
 }
 
-func handleEvents(quit, pause *bool, tab *[][]byte) {
+func handleEvents(w *sdl.Window, quit, pause *bool, tab *[][]byte) {
 	for !*quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
 			switch e := ev.(type) {
@@ -85,9 +94,17 @@ func handleEvents(quit, pause *bool, tab *[][]byte) {
 			case *sdl.MouseMotionEvent:
 				mouseMotionHandling(e, tab)
 			case *sdl.KeyboardEvent:
-				if e.Keysym.Sym == sdl.K_SPACE &&
-					e.Type == sdl.KEYUP {
-					*pause = !*pause
+				if e.Type == sdl.KEYUP {
+					switch e.Keysym.Sym {
+					case sdl.K_SPACE:
+						*pause = !*pause
+					case sdl.K_c:
+						*tab = newTab(rows, columns)
+					case sdl.K_f:
+						toggleFullscreen(w)
+					case sdl.K_q:
+						*quit = true
+					}
 				}
 			}
 		}
@@ -153,7 +170,7 @@ func main() {
 	tab := newTab(rows, columns)
 
 	quit, pause := false, true
-	go handleEvents(&quit, &pause, &tab)
+	go handleEvents(w, &quit, &pause, &tab)
 
 	for !quit {
 		start := time.Now()
