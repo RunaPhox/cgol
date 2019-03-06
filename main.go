@@ -56,12 +56,9 @@ func drawGrid(r *sdl.Renderer, edit *edit) {
 	}
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
-	x, y, _ := sdl.GetMouseState()
-	x /= cellSize
-	y /= cellSize
 	
 	if edit.shift {
-		x1, y1, x2, y2 := sqrPoints(x, y, edit.shiftX, edit.shiftY)
+		x1, y1, x2, y2 := sqrPoints(edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
 		r.DrawRect(&sdl.Rect{
 			X: x1 * cellSize,
 			Y: y1 * cellSize,
@@ -70,8 +67,8 @@ func drawGrid(r *sdl.Renderer, edit *edit) {
 		})		
 	} else {
 		r.DrawRect(&sdl.Rect{
-			X: x * cellSize,
-			Y: y * cellSize,
+			X: edit.lastX * cellSize,
+			Y: edit.lastY * cellSize,
 			W: cellSize,
 			H: cellSize,
 		})		
@@ -153,12 +150,8 @@ func cellSqr(tab *[][]byte, edit *edit, f cell) {
 func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 	edit *edit) {
 	edit.lastX, edit.lastY = tabIndex(m.X, m.Y)
-	if  k := sdl.GetKeyboardState();
-	    m.State == sdl.PRESSED {
-		if k[sdl.SCANCODE_LSHIFT] == 1 {
-		   	edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
-		   	edit.shift = true
-		} else {
+	if m.State == sdl.PRESSED {
+		if !edit.shift {
 			if edit.toggle {
 		   		toggleCell(tab, edit.lastX, edit.lastY)
 		   	} else if m.Button == sdl.BUTTON_LEFT {
@@ -166,10 +159,9 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 			} else if m.Button == sdl.BUTTON_RIGHT {
 			   	killCell(tab, edit.lastX, edit.lastY)
 		   	}
-		   	edit.shift = false
 		}
 	} else if m.State == sdl.RELEASED {
-		if k[sdl.SCANCODE_LSHIFT] == 1 {
+		if edit.shift {
 			if edit.toggle {
 		   		cellSqr(tab, edit, toggleCell)
 		   	} else if m.Button == sdl.BUTTON_LEFT {
@@ -183,24 +175,25 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
-	if m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/4 {
-		x, y := tabIndex(m.X, m.Y)
-		if (x != edit.lastX || y != edit.lastY) && !edit.shift {
+	x, y := tabIndex(m.X, m.Y);
+	if	m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/4 {
+		if (x != edit.lastX || y != edit.lastY) {
 			edit.lastX, edit.lastY = x, y
-			if edit.toggle {
-		   		toggleCell(tab, edit.lastX, edit.lastY)
-		   	} else if m.State == sdl.BUTTON_LEFT {
-			   	reviveCell(tab, edit.lastX, edit.lastY)
-			} else if m.State == /*sdl.BUTTON_RIGHT*/4 {
-			   	killCell(tab, edit.lastX, edit.lastY)
-		   	}
-		}
-		if k := sdl.GetKeyboardState();
-			k[sdl.SCANCODE_LSHIFT] == 0 {
-				edit.shift = false
+			if !edit.shift {
+				if edit.toggle {
+			   		toggleCell(tab, edit.lastX, edit.lastY)
+			   	} else if m.State == sdl.BUTTON_LEFT {
+				   	reviveCell(tab, edit.lastX, edit.lastY)
+				} else if m.State == /*sdl.BUTTON_RIGHT*/4 {
+				   	killCell(tab, edit.lastX, edit.lastY)
+			   	}
 			}
+		}
 	} else {
-		edit.shift = false
+		edit.lastX, edit.lastY = x, y
+	}
+	if !edit.shift {
+		edit.shiftX, edit.shiftY = x, y
 	}
 }
 
@@ -218,6 +211,18 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 			game.quit = true
 		case sdl.K_t:
 			edit.toggle = !edit.toggle
+		}
+	}
+
+	switch k.Keysym.Sym {
+	case sdl.K_LSHIFT:
+		switch k.State {
+		case sdl.PRESSED:
+			edit.shift = true
+		case sdl.RELEASED:
+			edit.shift = false
+			x, y, _ := sdl.GetMouseState()
+			edit.shiftX, edit.shiftY = tabIndex(x, y);
 		}
 	}
 }
