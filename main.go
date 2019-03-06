@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/runaphox/cgol/conway"
@@ -95,51 +94,75 @@ func handleEvents(quit, pause *bool, tab *[][]byte) {
 	}
 }
 
-func main() {
+func initSdl() (*sdl.Window, *sdl.Renderer, error) {
 	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	defer sdl.Quit()
 	w, err := sdl.CreateWindow("title", sdl.WINDOWPOS_UNDEFINED,
 		sdl.WINDOWPOS_UNDEFINED, width, height,
 		sdl.WINDOW_SHOWN|sdl.WINDOW_FULLSCREEN)
 
 	if err != nil {
-		panic(err)
+		return w, nil, err
 	}
-	defer w.Destroy()
 
 	r, err := sdl.CreateRenderer(w, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
-		panic(err)
+		return w, r, err
 	}
-	defer r.Destroy()
 
+	return w, r, nil
+}
+
+func closeSdl(w *sdl.Window, r *sdl.Renderer) {
+	if r != nil {
+		r.Destroy()
+	}
+
+	if w != nil {
+		w.Destroy()
+	}
+
+	sdl.Quit()
+}
+
+func newTab(row, col int) [][]byte {
 	tab := make([][]byte, rows)
 	for i := range tab {
 		tab[i] = make([]byte, columns)
 	}
 
-	quit := false
-	pause := true
+	return tab
+}
+
+func draw(r *sdl.Renderer, tab [][]byte) {
+	r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
+	r.Clear()
+	drawPop(r, tab)
+	drawGrid(r)
+	r.Present()
+}
+
+func main() {
+	w, r, err := initSdl()
+	if err != nil {
+		panic(err)
+	}
+	defer closeSdl(w, r)
+
+	tab := newTab(rows, columns)
+
+	quit, pause := false, true
 	go handleEvents(&quit, &pause, &tab)
+
 	for !quit {
 		start := time.Now()
 
-		r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
-		r.Clear()
-		drawPop(r, tab)
-		drawGrid(r)
-		r.Present()
-
+		draw(r, tab)
 		if !pause {
 			tab = conway.Update(tab)
 		}
 
 		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)
 	}
-}
-
-func printSlice(s []int) {
-	fmt.Printf("len: %d, cap: %d %v\n", len(s), cap(s), s)
 }
