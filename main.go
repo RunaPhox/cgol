@@ -6,6 +6,8 @@ import (
 	"github.com/runaphox/cgol/conway"
 
 	"github.com/veandco/go-sdl2/sdl"
+
+	"math/rand"
 )
 
 const (
@@ -16,6 +18,12 @@ const (
 	rows     = height / cellSize
 	popul    = columns * rows
 )
+
+func randColor(rgb chan uint8) {
+	for {
+		rgb <- uint8(rand.Intn(256))
+	}
+}
 
 func drawGrid(r *sdl.Renderer) {
 	r.SetDrawColor(0x66, 0x66, 0x66, 0xff)
@@ -37,8 +45,9 @@ func drawGrid(r *sdl.Renderer) {
 	})
 }
 
-func drawPop(r *sdl.Renderer, tab [][]byte) {
-	r.SetDrawColor(0x00, 0x35, 0xdb, 0xff)
+func drawPop(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
+	re, gr, bl := <- rgb, <- rgb, <- rgb
+	r.SetDrawColor(re, gr, bl, 0xff)
 	for i := int32(0); i < rows; i++ {
 		for j := int32(0); j < columns; j++ {
 			if tab[i][j] == 1 {
@@ -51,6 +60,14 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 			}
 		}
 	}
+}
+
+func draw(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
+	r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
+	r.Clear()
+	drawPop(r, tab, rgb)
+	drawGrid(r)
+	r.Present()
 }
 
 func toggleFullscreen(w *sdl.Window) {
@@ -93,7 +110,6 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 		}
 	}
 }
-
 
 func handleEvents(w *sdl.Window, quit, pause *bool, tab *[][]byte) {
 	var lastX, lastY int32 = -1, -1
@@ -165,14 +181,6 @@ func newTab(row, col int) [][]byte {
 	return tab
 }
 
-func draw(r *sdl.Renderer, tab [][]byte) {
-	r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
-	r.Clear()
-	drawPop(r, tab)
-	drawGrid(r)
-	r.Present()
-}
-
 func main() {
 	w, r, err := initSdl()
 	if err != nil {
@@ -183,12 +191,14 @@ func main() {
 	tab := newTab(rows, columns)
 
 	quit, pause := false, true
+	rgb := make(chan uint8, 3)
+	go randColor(rgb)
 	go handleEvents(w, &quit, &pause, &tab)
 
 	for !quit {
 		start := time.Now()
 
-		draw(r, tab)
+		draw(r, tab, rgb)
 		if !pause {
 			tab = conway.Update(tab)
 		}
