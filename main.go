@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 	"github.com/runaphox/cgol/conway"
 	"github.com/veandco/go-sdl2/sdl"
@@ -33,6 +34,7 @@ type edit struct {
 	shiftX int32
 	shiftY int32
 	shift  bool
+	toggle bool
 }
 
 func randColor(rgb chan uint8) {
@@ -104,6 +106,8 @@ func tabIndex(x, y int32) (int32, int32) {
 	return xInd, yInd
 }
 
+type cell func (*[][]byte, int32, int32)
+
 func toggleCell(tab *[][]byte, x, y int32) {
 	if (*tab)[y][x] == 0 {
 		(*tab)[y][x] = 1
@@ -112,42 +116,85 @@ func toggleCell(tab *[][]byte, x, y int32) {
 	}
 }
 
+func reviveCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 1}
+
+func killCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 0}
+
+func cellSqr(tab *[][]byte, edit *edit, f cell) {
+	minY := math.Min(float64(edit.lastY), float64(edit.shiftY))
+	maxY := math.Max(float64(edit.lastY), float64(edit.shiftY))
+	minX := math.Min(float64(edit.lastX), float64(edit.shiftX))
+	maxX := math.Max(float64(edit.lastX), float64(edit.shiftX))
+   	for i := minY; i <= maxY; i++ {
+   		for j := minX; j <= maxX; j++ {
+   			f(tab, int32(j), int32(i))
+   		}
+   	}
+}
+
 func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 	edit *edit) {
-	x, y := tabIndex(m.X, m.Y)
-	edit.lastX, edit.lastY = x, y
+	edit.lastX, edit.lastY = tabIndex(m.X, m.Y)
 	if  k := sdl.GetKeyboardState();
 	    m.State == sdl.PRESSED {
 		if k[sdl.SCANCODE_LSHIFT] == 1 {
-		   	edit.shiftX, edit.shiftY = x, y
+		   	edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
 		   	edit.shift = true
 		} else {
-		   	toggleCell(tab, x, y)
+			if edit.toggle {
+		   		toggleCell(tab, edit.lastX, edit.lastY)
+		   	} else if m.Button == sdl.BUTTON_LEFT {
+			   	reviveCell(tab, edit.lastX, edit.lastY)
+			} else if m.Button == sdl.BUTTON_RIGHT {
+			   	killCell(tab, edit.lastX, edit.lastY)
+		   	}
 		   	edit.shift = false
 		}
 	} else if m.State == sdl.RELEASED {
 		if k[sdl.SCANCODE_LSHIFT] == 1 {
-			minY := math.Min(float64(y), float64(edit.shiftY))
-			maxY := math.Max(float64(y), float64(edit.shiftY))
-			minX := math.Min(float64(x), float64(edit.shiftX))
-			maxX := math.Max(float64(x), float64(edit.shiftX))
-		   	for i := minY; i <= maxY; i++ {
-		   		for j := minX; j <= maxX; j++ {
-		   			toggleCell(tab, int32(j), int32(i))
-		   		}
-		   	}
+			if edit.toggle {
+		   		cellSqr(tab, edit, toggleCell)
+		   	} else if m.Button == sdl.BUTTON_LEFT {
+		   		cellSqr(tab, edit, reviveCell)
+			} else if m.Button == sdl.BUTTON_RIGHT {
+		   		cellSqr(tab, edit, killCell)
+			}
 		}
 	}
 }
 
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
-	if m.State == sdl.BUTTON_LEFT {
+	if m.State == sdl.BUTTON_LEFT || m.State == sdl.BUTTON_RIGHT {
 		x, y := tabIndex(m.X, m.Y)
-
 		if (x != edit.lastX || y != edit.lastY) && !edit.shift {
-			toggleCell(tab, x, y)
 			edit.lastX, edit.lastY = x, y
+			if edit.toggle {
+		   		toggleCell(tab, edit.lastX, edit.lastY)
+		   	} else if m.State == sdl.BUTTON_LEFT {
+		   		reviveCell(tab, edit.lastX, edit.lastY)
+			} else if m.State == sdl.BUTTON_RIGHT {
+				fmt.Println("Yes")
+		   		killCell(tab, edit.lastX, edit.lastY)
+			}
+		}
+	}
+}
+
+func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
+	game *stage, edit *edit) {
+	if k.Type == sdl.KEYUP {
+		switch k.Keysym.Sym {
+		case sdl.K_SPACE:
+			game.pause = !game.pause
+		case sdl.K_c:
+			game.tab = newTab(rows, columns)
+		case sdl.K_f:
+			toggleFullscreen(w)
+		case sdl.K_q:
+			game.quit = true
+		case sdl.K_t:
+			edit.toggle = !edit.toggle
 		}
 	}
 }
@@ -163,18 +210,7 @@ func handleEvents(w *sdl.Window, game *stage, edit *edit) {
 			case *sdl.MouseMotionEvent:
 				mouseMotionHandling(e, &game.tab, edit)
 			case *sdl.KeyboardEvent:
-				if e.Type == sdl.KEYUP {
-					switch e.Keysym.Sym {
-					case sdl.K_SPACE:
-						game.pause = !game.pause
-					case sdl.K_c:
-						game.tab = newTab(rows, columns)
-					case sdl.K_f:
-						toggleFullscreen(w)
-					case sdl.K_q:
-						game.quit = true
-					}
-				}
+				keyboardHandling(e, w, game, edit)
 			}
 		}
 	}
