@@ -1,10 +1,10 @@
 package main
 
 import (
-	"time"
 	"github.com/runaphox/cgol/conway"
 	"github.com/veandco/go-sdl2/sdl"
 	"math"
+	"time"
 )
 
 const (
@@ -56,22 +56,23 @@ func drawGrid(r *sdl.Renderer, edit *edit) {
 	}
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
-	
+
 	if edit.shift {
-		x1, y1, x2, y2 := sqrPoints(edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
+		x1, y1, x2, y2 := sqrPoints(
+			edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
 		r.DrawRect(&sdl.Rect{
 			X: x1 * cellSize,
 			Y: y1 * cellSize,
-			W: cellSize * (x2-x1+1),
-			H: cellSize * (y2-y1+1),
-		})		
+			W: cellSize * (x2 - x1 + 1),
+			H: cellSize * (y2 - y1 + 1),
+		})
 	} else {
 		r.DrawRect(&sdl.Rect{
 			X: edit.lastX * cellSize,
 			Y: edit.lastY * cellSize,
 			W: cellSize,
 			H: cellSize,
-		})		
+		})
 	}
 }
 
@@ -116,7 +117,7 @@ func tabIndex(x, y int32) (int32, int32) {
 	return xInd, yInd
 }
 
-type cell func (*[][]byte, int32, int32)
+type cell func(*[][]byte, int32, int32)
 
 func toggleCell(tab *[][]byte, x, y int32) {
 	if (*tab)[y][x] == 0 {
@@ -126,9 +127,9 @@ func toggleCell(tab *[][]byte, x, y int32) {
 	}
 }
 
-func reviveCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 1}
+func reviveCell(tab *[][]byte, x, y int32) { (*tab)[y][x] = 1 }
 
-func killCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 0}
+func killCell(tab *[][]byte, x, y int32) { (*tab)[y][x] = 0 }
 
 func sqrPoints(x1, y1, x2, y2 int32) (int32, int32, int32, int32) {
 	minX := int32(math.Min(float64(x1), float64(x2)))
@@ -139,12 +140,13 @@ func sqrPoints(x1, y1, x2, y2 int32) (int32, int32, int32, int32) {
 }
 
 func cellSqr(tab *[][]byte, edit *edit, f cell) {
-	minX, minY, maxX, maxY := sqrPoints(edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
-   	for i := minY; i <= maxY; i++ {
-   		for j := minX; j <= maxX; j++ {
-   			f(tab, int32(j), int32(i))
-   		}
-   	}
+	minX, minY, maxX, maxY := sqrPoints(
+		edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
+	for i := minY; i <= maxY; i++ {
+		for j := minX; j <= maxX; j++ {
+			f(tab, int32(j), int32(i))
+		}
+	}
 }
 
 func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
@@ -153,21 +155,21 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 	if m.State == sdl.PRESSED {
 		if !edit.shift {
 			if edit.toggle {
-		   		toggleCell(tab, edit.lastX, edit.lastY)
-		   	} else if m.Button == sdl.BUTTON_LEFT {
-			   	reviveCell(tab, edit.lastX, edit.lastY)
+				toggleCell(tab, edit.lastX, edit.lastY)
+			} else if m.Button == sdl.BUTTON_LEFT {
+				reviveCell(tab, edit.lastX, edit.lastY)
 			} else if m.Button == sdl.BUTTON_RIGHT {
-			   	killCell(tab, edit.lastX, edit.lastY)
-		   	}
+				killCell(tab, edit.lastX, edit.lastY)
+			}
 		}
 	} else if m.State == sdl.RELEASED {
 		if edit.shift {
 			if edit.toggle {
-		   		cellSqr(tab, edit, toggleCell)
-		   	} else if m.Button == sdl.BUTTON_LEFT {
-		   		cellSqr(tab, edit, reviveCell)
+				cellSqr(tab, edit, toggleCell)
+			} else if m.Button == sdl.BUTTON_LEFT {
+				cellSqr(tab, edit, reviveCell)
 			} else if m.Button == sdl.BUTTON_RIGHT {
-		   		cellSqr(tab, edit, killCell)
+				cellSqr(tab, edit, killCell)
 			}
 		}
 	}
@@ -175,24 +177,22 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
-	x, y := tabIndex(m.X, m.Y);
-	if	m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/4 {
-		if (x != edit.lastX || y != edit.lastY) {
+	x, y := tabIndex(m.X, m.Y)
+	if m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/ 4 {
+		if x != edit.lastX || y != edit.lastY {
 			edit.lastX, edit.lastY = x, y
 			if !edit.shift {
 				if edit.toggle {
-			   		toggleCell(tab, edit.lastX, edit.lastY)
-			   	} else if m.State == sdl.BUTTON_LEFT {
-				   	reviveCell(tab, edit.lastX, edit.lastY)
-				} else if m.State == /*sdl.BUTTON_RIGHT*/4 {
-				   	killCell(tab, edit.lastX, edit.lastY)
-			   	}
+					toggleCell(tab, edit.lastX, edit.lastY)
+				} else if m.State == sdl.BUTTON_LEFT {
+					reviveCell(tab, edit.lastX, edit.lastY)
+				} else if m.State == /*sdl.BUTTON_RIGHT*/ 4 {
+					killCell(tab, edit.lastX, edit.lastY)
+				}
 			}
 		}
 	} else {
 		edit.lastX, edit.lastY = x, y
-	}
-	if !edit.shift {
 		edit.shiftX, edit.shiftY = x, y
 	}
 }
@@ -222,7 +222,7 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.RELEASED:
 			edit.shift = false
 			x, y, _ := sdl.GetMouseState()
-			edit.shiftX, edit.shiftY = tabIndex(x, y);
+			edit.shiftX, edit.shiftY = tabIndex(x, y)
 		}
 	}
 }
