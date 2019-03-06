@@ -2,11 +2,8 @@ package main
 
 import (
 	"time"
-
 	"github.com/runaphox/cgol/conway"
-
 	"github.com/veandco/go-sdl2/sdl"
-
 	"math"
 )
 
@@ -28,6 +25,14 @@ type stage struct {
 	quit  bool
 	pause bool
 	tab   [][]byte
+}
+
+type edit struct {
+	lastX  int32
+	lastY  int32
+	shiftX int32
+	shiftY int32
+	shift  bool
 }
 
 func randColor(rgb chan uint8) {
@@ -107,35 +112,56 @@ func toggleCell(tab *[][]byte, x, y int32) {
 	}
 }
 
-func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte) {
-	if m.State == sdl.PRESSED {
-		x, y := tabIndex(m.X, m.Y)
-		toggleCell(tab, x, y)
-	}
-}
-
-func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
-	lastX, lastY *int32) {
-	if _, _, t := sdl.GetMouseState(); t == sdl.PRESSED {
-		x, y := tabIndex(m.X, m.Y)
-		if x != *lastX || y != *lastY {
-			toggleCell(tab, x, y)
-			*lastX, *lastY = x, y
+func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
+	edit *edit) {
+	x, y := tabIndex(m.X, m.Y)
+	edit.lastX, edit.lastY = x, y
+	if  k := sdl.GetKeyboardState();
+	    m.State == sdl.PRESSED {
+		if k[sdl.SCANCODE_LSHIFT] == 1 {
+		   	edit.shiftX, edit.shiftY = x, y
+		   	edit.shift = true
+		} else {
+		   	toggleCell(tab, x, y)
+		   	edit.shift = false
+		}
+	} else if m.State == sdl.RELEASED {
+		if k[sdl.SCANCODE_LSHIFT] == 1 {
+			minY := math.Min(float64(y), float64(edit.shiftY))
+			maxY := math.Max(float64(y), float64(edit.shiftY))
+			minX := math.Min(float64(x), float64(edit.shiftX))
+			maxX := math.Max(float64(x), float64(edit.shiftX))
+		   	for i := minY; i <= maxY; i++ {
+		   		for j := minX; j <= maxX; j++ {
+		   			toggleCell(tab, int32(j), int32(i))
+		   		}
+		   	}
 		}
 	}
 }
 
-func handleEvents(w *sdl.Window, game *stage) {
-	var lastX, lastY int32 = -1, -1
+func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
+	edit *edit) {
+	if m.State == sdl.BUTTON_LEFT {
+		x, y := tabIndex(m.X, m.Y)
+
+		if (x != edit.lastX || y != edit.lastY) && !edit.shift {
+			toggleCell(tab, x, y)
+			edit.lastX, edit.lastY = x, y
+		}
+	}
+}
+
+func handleEvents(w *sdl.Window, game *stage, edit *edit) {
 	for !game.quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
 			switch e := ev.(type) {
 			case *sdl.QuitEvent:
 				game.quit = true
 			case *sdl.MouseButtonEvent:
-				mouseButtonHandling(e, &game.tab)
+				mouseButtonHandling(e, &game.tab, edit)
 			case *sdl.MouseMotionEvent:
-				mouseMotionHandling(e, &game.tab, &lastX, &lastY)
+				mouseMotionHandling(e, &game.tab, edit)
 			case *sdl.KeyboardEvent:
 				if e.Type == sdl.KEYUP {
 					switch e.Keysym.Sym {
@@ -205,11 +231,12 @@ func main() {
 	}
 	defer closeSdl(wrap)
 
-	game := stage{quit: false, pause: true, tab: newTab(rows, columns)}
+	game := stage{pause: true, tab: newTab(rows, columns)}
+	edit := edit{}
 
 	rgb := make(chan uint8, 3)
 	go randColor(rgb)
-	go handleEvents(wrap.w, &game)
+	go handleEvents(wrap.w, &game, &edit)
 
 	for !game.quit {
 		start := time.Now()
