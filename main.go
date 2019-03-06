@@ -87,10 +87,10 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
                          lastX, lastY *int32) {
 	if _, _, t := sdl.GetMouseState(); t == sdl.PRESSED {
 		x, y := tabIndex(m.X, m.Y)
-		//if x != *lastX && y != *lastY {
+		if x != *lastX || y != *lastY {
 			toggleCell(tab, x, y)
 			*lastX, *lastY = x, y
-		//}
+		}
 	}
 }
 
