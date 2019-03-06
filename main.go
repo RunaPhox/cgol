@@ -45,7 +45,7 @@ func randColor(rgb chan uint8) {
 	}
 }
 
-func drawGrid(r *sdl.Renderer) {
+func drawGrid(r *sdl.Renderer, edit *edit) {
 	r.SetDrawColor(0x66, 0x66, 0x66, 0xff)
 	for i := int32(cellSize); i <= height-cellSize; i += cellSize {
 		r.DrawLine(0, i, width, i)
@@ -57,12 +57,25 @@ func drawGrid(r *sdl.Renderer) {
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
 	x, y, _ := sdl.GetMouseState()
-	r.DrawRect(&sdl.Rect{
-		X: x / cellSize * cellSize,
-		Y: y / cellSize * cellSize,
-		W: cellSize,
-		H: cellSize,
-	})
+	x /= cellSize
+	y /= cellSize
+	
+	if edit.shift {
+		x1, y1, x2, y2 := sqrPoints(x, y, edit.shiftX, edit.shiftY)
+		r.DrawRect(&sdl.Rect{
+			X: x1 * cellSize,
+			Y: y1 * cellSize,
+			W: cellSize * (x2-x1+1),
+			H: cellSize * (y2-y1+1),
+		})		
+	} else {
+		r.DrawRect(&sdl.Rect{
+			X: x * cellSize,
+			Y: y * cellSize,
+			W: cellSize,
+			H: cellSize,
+		})		
+	}
 }
 
 func drawPop(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
@@ -82,11 +95,12 @@ func drawPop(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
 	}
 }
 
-func draw(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
+func draw(r *sdl.Renderer, tab [][]byte, rgb chan uint8,
+	edit *edit) {
 	r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
 	r.Clear()
 	drawPop(r, tab, rgb)
-	drawGrid(r)
+	drawGrid(r, edit)
 	r.Present()
 }
 
@@ -119,11 +133,16 @@ func reviveCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 1}
 
 func killCell(tab *[][]byte, x, y int32) {(*tab)[y][x] = 0}
 
+func sqrPoints(x1, y1, x2, y2 int32) (int32, int32, int32, int32) {
+	minX := int32(math.Min(float64(x1), float64(x2)))
+	minY := int32(math.Min(float64(y1), float64(y2)))
+	maxX := int32(math.Max(float64(x1), float64(x2)))
+	maxY := int32(math.Max(float64(y1), float64(y2)))
+	return minX, minY, maxX, maxY
+}
+
 func cellSqr(tab *[][]byte, edit *edit, f cell) {
-	minY := math.Min(float64(edit.lastY), float64(edit.shiftY))
-	maxY := math.Max(float64(edit.lastY), float64(edit.shiftY))
-	minX := math.Min(float64(edit.lastX), float64(edit.shiftX))
-	maxX := math.Max(float64(edit.lastX), float64(edit.shiftX))
+	minX, minY, maxX, maxY := sqrPoints(edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
    	for i := minY; i <= maxY; i++ {
    		for j := minX; j <= maxX; j++ {
    			f(tab, int32(j), int32(i))
@@ -176,6 +195,12 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 			   	killCell(tab, edit.lastX, edit.lastY)
 		   	}
 		}
+		if k := sdl.GetKeyboardState();
+			k[sdl.SCANCODE_LSHIFT] == 0 {
+				edit.shift = false
+			}
+	} else {
+		edit.shift = false
 	}
 }
 
@@ -275,7 +300,7 @@ func main() {
 	for !game.quit {
 		start := time.Now()
 
-		draw(wrap.r, game.tab, rgb)
+		draw(wrap.r, game.tab, rgb, &edit)
 		if !game.pause {
 			game.tab = conway.Update(game.tab)
 		}
