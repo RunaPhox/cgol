@@ -27,6 +27,11 @@ func drawGrid(r *sdl.Renderer) {
 	for i := int32(cellSize); i <= width-cellSize; i += cellSize {
 		r.DrawLine(i, 0, i, height)
 	}
+
+	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
+	x, y, _ := sdl.GetMouseState()
+	r.DrawRect(&sdl.Rect{X:x/cellSize*cellSize, Y:y/cellSize*cellSize, 
+		                 W:cellSize, H:cellSize})
 }
 
 func drawPop(r *sdl.Renderer, tab [][]byte) {
@@ -45,12 +50,25 @@ func drawPop(r *sdl.Renderer, tab [][]byte) {
 	}
 }
 
-func handleEvents(quit *bool) {
+func handleEvents(quit, pause *bool, tab *[][]byte) {
 	for !*quit {
 		for ev := sdl.PollEvent(); ev != nil; ev = sdl.PollEvent() {
-			switch ev.(type) {
+			switch e:=ev.(type) {
 			case *sdl.QuitEvent:
 				*quit = true
+			case *sdl.MouseButtonEvent:
+				if e.Type == sdl.MOUSEBUTTONDOWN {
+					fmt.Printf("Hice click en (%d,%d)\n", e.X/cellSize, e.Y/cellSize)
+					if (*tab)[e.Y/cellSize][e.X/cellSize] == 0 {
+						(*tab)[e.Y/cellSize][e.X/cellSize] = 1
+					} else {
+						(*tab)[e.Y/cellSize][e.X/cellSize] = 0
+					}
+				}
+			case *sdl.KeyboardEvent:
+				if e.Keysym.Sym == sdl.K_SPACE && e.Type == sdl.KEYUP {
+					*pause = !*pause
+				}
 			}
 		}
 	}
@@ -88,7 +106,8 @@ func main() {
 	tab[6][11] = 1
 
 	quit := false
-	go handleEvents(&quit)
+	pause := true
+	go handleEvents(&quit, &pause, &tab)
 	for !quit {
 		start := time.Now()
 
@@ -98,9 +117,11 @@ func main() {
 		drawGrid(r)
 		r.Present()
 
-		tab = conway.Update(tab)
+		if !pause {
+			tab = conway.Update(tab)
+		}
 
-		time.Sleep(start.Sub(time.Now()) + 128*time.Millisecond)
+		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)
 	}
 }
 
