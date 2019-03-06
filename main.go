@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 	"github.com/runaphox/cgol/conway"
 	"github.com/veandco/go-sdl2/sdl"
@@ -165,18 +164,17 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
-	if m.State == sdl.BUTTON_LEFT || m.State == sdl.BUTTON_RIGHT {
+	if m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/4 {
 		x, y := tabIndex(m.X, m.Y)
 		if (x != edit.lastX || y != edit.lastY) && !edit.shift {
 			edit.lastX, edit.lastY = x, y
 			if edit.toggle {
 		   		toggleCell(tab, edit.lastX, edit.lastY)
 		   	} else if m.State == sdl.BUTTON_LEFT {
-		   		reviveCell(tab, edit.lastX, edit.lastY)
-			} else if m.State == sdl.BUTTON_RIGHT {
-				fmt.Println("Yes")
-		   		killCell(tab, edit.lastX, edit.lastY)
-			}
+			   	reviveCell(tab, edit.lastX, edit.lastY)
+			} else if m.State == /*sdl.BUTTON_RIGHT*/4 {
+			   	killCell(tab, edit.lastX, edit.lastY)
+		   	}
 		}
 	}
 }
