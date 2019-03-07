@@ -7,7 +7,7 @@ import (
 )
 
 func randColor(rgb chan uint8) {
-	for v := 0.0; ; v += 0.01 {
+	for v := 0.0; ; v += 0.002 {
 		sin, cos, sin2 := math.Sin(v), math.Cos(v), math.Sin(2*v)
 		rgb <- uint8(sin * sin * 255)
 		rgb <- uint8(sin2 * sin2 * 255)
