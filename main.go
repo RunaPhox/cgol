@@ -195,7 +195,6 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 		}
 	} else {
 		edit.lastX, edit.lastY = x, y
-		edit.shiftX, edit.shiftY = x, y
 	}
 }
 
