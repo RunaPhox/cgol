@@ -171,6 +171,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 			} else if m.Button == sdl.BUTTON_RIGHT {
 				cellSqr(tab, edit, killCell)
 			}
+			edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
 		}
 	}
 }
@@ -219,10 +220,10 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		switch k.State {
 		case sdl.PRESSED:
 			edit.shift = true
-		case sdl.RELEASED:
-			edit.shift = false
 			x, y, _ := sdl.GetMouseState()
 			edit.shiftX, edit.shiftY = tabIndex(x, y)
+		case sdl.RELEASED:
+			edit.shift = false
 		}
 	}
 }
