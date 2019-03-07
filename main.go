@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/runaphox/cgol/conway"
-	"github.com/veandco/go-sdl2/sdl"
 	"math"
 	"time"
+
+	"github.com/runaphox/cgol/conway"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 const (
@@ -179,7 +180,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
 	x, y := tabIndex(m.X, m.Y)
-	if m.State == sdl.BUTTON_LEFT || m.State == /*sdl.BUTTON_RIGHT*/ 4 {
+	if m.State&(sdl.BUTTON_LEFT|sdl.BUTTON_RIGHT) > 0 {
 		if x != edit.lastX || y != edit.lastY {
 			edit.lastX, edit.lastY = x, y
 			if !edit.shift {
@@ -187,7 +188,7 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 					toggleCell(tab, edit.lastX, edit.lastY)
 				} else if m.State == sdl.BUTTON_LEFT {
 					reviveCell(tab, edit.lastX, edit.lastY)
-				} else if m.State == /*sdl.BUTTON_RIGHT*/ 4 {
+				} else if m.State&sdl.BUTTON_RIGHT > 0 {
 					killCell(tab, edit.lastX, edit.lastY)
 				}
 			}
