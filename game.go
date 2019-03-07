@@ -3,6 +3,7 @@ package main
 type stage struct {
 	quit  bool
 	pause bool
+	wrap bool
 	tab   [][]byte
 }
 

@@ -25,7 +25,7 @@ func main() {
 	}
 	defer closeSdl(wrap)
 
-	game := stage{pause: true, tab: newTab(rows, columns)}
+	game := stage{pause: true, wrap: true, tab: newTab(rows, columns)}
 	edit := edit{}
 
 	rgb := make(chan uint8, 3)
@@ -37,7 +37,7 @@ func main() {
 
 		draw(wrap.r, game.tab, rgb, &edit)
 		if !game.pause {
-			game.tab = conway.Update(game.tab)
+			game.tab = conway.Update(game.tab, game.wrap)
 		}
 
 		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)

@@ -33,6 +33,10 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 			game.quit = true
 		case sdl.K_t:
 			edit.toggle = !edit.toggle
+		case sdl.K_w:
+			if game.pause {
+				game.wrap = !game.wrap
+			}
 		}
 	}
 

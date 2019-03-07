@@ -2,7 +2,7 @@ package conway
 
 // Update takes a existent byte matrix (the board) and updates it according
 // to the rules of Conway's Game of Life
-func Update(tab [][]byte) [][]byte {
+func Update(tab [][]byte, wrap bool) [][]byte {
 	buf := make([][]byte, len(tab))
 	for i := range buf {
 		buf[i] = make([]byte, len(tab[i]))
@@ -11,7 +11,7 @@ func Update(tab [][]byte) [][]byte {
 
 	for i, row := range tab {
 		for j := range row {
-			cnt := countNeighbor(tab, j, i)
+			cnt := countNeighbor(tab, j, i, wrap)
 
 			if tab[i][j] == 0 && cnt == 3 {
 				buf[i][j] = 1
@@ -25,7 +25,7 @@ func Update(tab [][]byte) [][]byte {
 	return buf
 }
 
-func countNeighbor(tab [][]byte, x, y int) (n int) {
+func countNeighbor(tab [][]byte, x, y int, wrap bool) (n int) {
 	var indY, indX int
 	for i := y - 1; i <= y+1; i++ {
 		for j := x - 1; j <= x+1; j++ {
@@ -43,6 +43,11 @@ func countNeighbor(tab [][]byte, x, y int) (n int) {
 			} else {
 				indX = indX % len(tab[0])
 			}
+
+			if !wrap && (indY != i || indX != j) {
+				continue
+			}
+
 			n += int(tab[indY][indX])
 		}
 	}
