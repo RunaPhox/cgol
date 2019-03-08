@@ -5,7 +5,10 @@ type edit struct {
 	lastY  int32
 	shiftX int32
 	shiftY int32
+	ctrlX  int32
+	ctrlY  int32
 	shift  bool
+	ctrl   bool
 	toggle bool
 }
 
@@ -20,11 +23,25 @@ func toggleCell(tab *[][]byte, x, y int32) {
 }
 
 func editRect(tab *[][]byte, edit *edit, f cell) {
-	minX, minY, maxX, maxY := sqrPoints(
-		edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
-	for i := minY; i <= maxY; i++ {
-		for j := minX; j <= maxX; j++ {
-			f(tab, int32(j), int32(i))
+	if edit.shift && !edit.ctrl {
+		minX, minY, maxX, maxY := sqrPoints(
+			edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
+		for i := minY; i <= maxY; i++ {
+			for j := minX; j <= maxX; j++ {
+				f(tab, int32(j), int32(i))
+			}
+		}
+	} else if !edit.shift && edit.ctrl {
+		minX, minY, maxX, maxY := sqrPoints(
+			edit.lastX, edit.lastY, edit.ctrlX, edit.ctrlY)
+		if maxX-minX <= maxY-minY {
+			for i := minY; i <= maxY; i++ {
+				f(tab, edit.ctrlX, int32(i))
+			}
+		} else {
+			for i := minX; i <= maxX; i++ {
+				f(tab, int32(i), edit.ctrlY)
+			}
 		}
 	}
 }

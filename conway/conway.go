@@ -44,11 +44,9 @@ func countNeighbor(tab [][]byte, x, y int, wrap bool) (n int) {
 				indX = indX % len(tab[0])
 			}
 
-			if !wrap && (indY != i || indX != j) {
-				continue
+			if (indY == i && indX == j) || wrap {
+				n += int(tab[indY][indX])
 			}
-
-			n += int(tab[indY][indX])
 		}
 	}
 

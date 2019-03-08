@@ -36,7 +36,25 @@ func drawGrid(r *sdl.Renderer, edit *edit) {
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
 
-	if edit.shift {
+	if edit.ctrl {
+		x1, y1, x2, y2 := sqrPoints(
+			edit.lastX, edit.lastY, edit.ctrlX, edit.ctrlY)
+		if x2-x1 <= y2-y1 {
+			r.DrawRect(&sdl.Rect{
+				X: edit.ctrlX * cellSize,
+				Y: y1 * cellSize,
+				W: cellSize,
+				H: cellSize * (y2 - y1 + 1),
+			})
+		} else {
+			r.DrawRect(&sdl.Rect{
+				X: x1 * cellSize,
+				Y: edit.ctrlY * cellSize,
+				W: cellSize * (x2 - x1 + 1),
+				H: cellSize,
+			})
+		}
+	} else if edit.shift {
 		x1, y1, x2, y2 := sqrPoints(
 			edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
 		r.DrawRect(&sdl.Rect{

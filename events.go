@@ -50,6 +50,15 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.RELEASED:
 			edit.shift = false
 		}
+	case sdl.K_LCTRL:
+		switch k.State {
+		case sdl.PRESSED:
+			edit.ctrl = true
+			x, y, _ := sdl.GetMouseState()
+			edit.ctrlX, edit.ctrlY = tabIndex(x, y)
+		case sdl.RELEASED:
+			edit.ctrl = false
+		}
 	}
 }
 
@@ -57,7 +66,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 	edit *edit) {
 	edit.lastX, edit.lastY = tabIndex(m.X, m.Y)
 	if m.State == sdl.PRESSED {
-		if !edit.shift {
+		if !edit.shift && !edit.ctrl {
 			if edit.toggle {
 				toggleCell(tab, edit.lastX, edit.lastY)
 			} else if m.Button == sdl.BUTTON_LEFT {
@@ -67,7 +76,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 			}
 		}
 	} else if m.State == sdl.RELEASED {
-		if edit.shift {
+		if edit.shift || edit.ctrl {
 			if edit.toggle {
 				editRect(tab, edit, toggleCell)
 			} else if m.Button == sdl.BUTTON_LEFT {
@@ -76,6 +85,7 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 				editRect(tab, edit, killCell)
 			}
 			edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
+			edit.ctrlX, edit.ctrlY = edit.lastX, edit.lastY
 		}
 	}
 }
@@ -83,15 +93,15 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
 	edit *edit) {
 	x, y := tabIndex(m.X, m.Y)
-	if m.State&(sdl.BUTTON_LEFT|sdl.BUTTON_RIGHT) > 0 {
+	if m.State == sdl.BUTTON_LEFT || m.State == 4 {
 		if x != edit.lastX || y != edit.lastY {
 			edit.lastX, edit.lastY = x, y
-			if !edit.shift {
+			if !edit.shift && !edit.ctrl {
 				if edit.toggle {
 					toggleCell(tab, edit.lastX, edit.lastY)
 				} else if m.State == sdl.BUTTON_LEFT {
 					reviveCell(tab, edit.lastX, edit.lastY)
-				} else if m.State&sdl.BUTTON_RIGHT > 0 {
+				} else if m.State == 4 {
 					killCell(tab, edit.lastX, edit.lastY)
 				}
 			}
