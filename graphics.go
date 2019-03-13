@@ -2,9 +2,19 @@ package main
 
 import (
 	"math"
+	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+func renderSimulation(r *sdl.Renderer, game *stage, rgb chan uint8,
+	edit *edit) {
+	for {
+		start := time.Now()
+		draw(r, game, rgb, edit)
+		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)
+	}
+}
 
 func randColor(rgb chan uint8) {
 	for v := 0.0; ; v += 0.002 {
@@ -15,23 +25,23 @@ func randColor(rgb chan uint8) {
 	}
 }
 
-func draw(r *sdl.Renderer, tab [][]byte, rgb chan uint8,
+func draw(r *sdl.Renderer, game *stage, rgb chan uint8,
 	edit *edit) {
 	r.SetDrawColor(0x00, 0x00, 0x00, 0xff)
 	r.Clear()
-	drawPop(r, tab, rgb)
-	drawGrid(r, edit)
+	drawPop(r, game, rgb)
+	drawGrid(r, edit, game)
 	r.Present()
 }
 
-func drawGrid(r *sdl.Renderer, edit *edit) {
+func drawGrid(r *sdl.Renderer, edit *edit, game *stage) {
 	r.SetDrawColor(0x66, 0x66, 0x66, 0xff)
-	for i := int32(cellSize); i <= height-cellSize; i += cellSize {
-		r.DrawLine(0, i, width, i)
+	for i := int32(game.cellSize); i <= game.height-game.cellSize; i += game.cellSize {
+		r.DrawLine(0, i, game.width, i)
 	}
 
-	for i := int32(cellSize); i <= width-cellSize; i += cellSize {
-		r.DrawLine(i, 0, i, height)
+	for i := int32(game.cellSize); i <= game.width-game.cellSize; i += game.cellSize {
+		r.DrawLine(i, 0, i, game.height)
 	}
 
 	r.SetDrawColor(0xf4, 0xdf, 0x42, 0xFF)
@@ -41,49 +51,49 @@ func drawGrid(r *sdl.Renderer, edit *edit) {
 			edit.lastX, edit.lastY, edit.ctrlX, edit.ctrlY)
 		if x2-x1 <= y2-y1 {
 			r.DrawRect(&sdl.Rect{
-				X: edit.ctrlX * cellSize,
-				Y: y1 * cellSize,
-				W: cellSize,
-				H: cellSize * (y2 - y1 + 1),
+				X: edit.ctrlX * game.cellSize,
+				Y: y1 * game.cellSize,
+				W: game.cellSize,
+				H: game.cellSize * (y2 - y1 + 1),
 			})
 		} else {
 			r.DrawRect(&sdl.Rect{
-				X: x1 * cellSize,
-				Y: edit.ctrlY * cellSize,
-				W: cellSize * (x2 - x1 + 1),
-				H: cellSize,
+				X: x1 * game.cellSize,
+				Y: edit.ctrlY * game.cellSize,
+				W: game.cellSize * (x2 - x1 + 1),
+				H: game.cellSize,
 			})
 		}
 	} else if edit.shift {
 		x1, y1, x2, y2 := sqrPoints(
 			edit.lastX, edit.lastY, edit.shiftX, edit.shiftY)
 		r.DrawRect(&sdl.Rect{
-			X: x1 * cellSize,
-			Y: y1 * cellSize,
-			W: cellSize * (x2 - x1 + 1),
-			H: cellSize * (y2 - y1 + 1),
+			X: x1 * game.cellSize,
+			Y: y1 * game.cellSize,
+			W: game.cellSize * (x2 - x1 + 1),
+			H: game.cellSize * (y2 - y1 + 1),
 		})
 	} else {
 		r.DrawRect(&sdl.Rect{
-			X: edit.lastX * cellSize,
-			Y: edit.lastY * cellSize,
-			W: cellSize,
-			H: cellSize,
+			X: edit.lastX * game.cellSize,
+			Y: edit.lastY * game.cellSize,
+			W: game.cellSize,
+			H: game.cellSize,
 		})
 	}
 }
 
-func drawPop(r *sdl.Renderer, tab [][]byte, rgb chan uint8) {
+func drawPop(r *sdl.Renderer, game *stage, rgb chan uint8) {
 	re, gr, bl := <-rgb, <-rgb, <-rgb
 	r.SetDrawColor(re, gr, bl, 0xff)
-	for i := int32(0); i < rows; i++ {
-		for j := int32(0); j < columns; j++ {
-			if tab[i][j] == 1 {
+	for i := int32(0); i < game.rows; i++ {
+		for j := int32(0); j < game.columns; j++ {
+			if game.tab[i][j] == 1 {
 				r.FillRect(&sdl.Rect{
-					X: j * cellSize,
-					Y: i * cellSize,
-					W: cellSize,
-					H: cellSize,
+					X: j * game.cellSize,
+					Y: i * game.cellSize,
+					W: game.cellSize,
+					H: game.cellSize,
 				})
 			}
 		}

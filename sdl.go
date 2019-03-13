@@ -7,12 +7,12 @@ type sdlContext struct {
 	r *sdl.Renderer
 }
 
-func initSdl() (*sdl.Window, *sdl.Renderer, error) {
+func initSdl(game *stage) (*sdl.Window, *sdl.Renderer, error) {
 	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 		return nil, nil, err
 	}
 	w, err := sdl.CreateWindow("title", sdl.WINDOWPOS_UNDEFINED,
-		sdl.WINDOWPOS_UNDEFINED, width, height,
+		sdl.WINDOWPOS_UNDEFINED, game.width, game.height,
 		sdl.WINDOW_SHOWN|sdl.WINDOW_FULLSCREEN)
 
 	if err != nil {

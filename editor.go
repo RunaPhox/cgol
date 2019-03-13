@@ -22,6 +22,14 @@ func toggleCell(tab *[][]byte, x, y int32) {
 	}
 }
 
+func reviveCell(tab *[][]byte, x, y int32) {
+	(*tab)[y][x] = 1
+}
+
+func killCell(tab *[][]byte, x, y int32) {
+	(*tab)[y][x] = 0
+}
+
 func editRect(tab *[][]byte, edit *edit, f cell) {
 	if edit.shift && !edit.ctrl {
 		minX, minY, maxX, maxY := sqrPoints(
@@ -44,12 +52,4 @@ func editRect(tab *[][]byte, edit *edit, f cell) {
 			}
 		}
 	}
-}
-
-func reviveCell(tab *[][]byte, x, y int32) {
-	(*tab)[y][x] = 1
-}
-
-func killCell(tab *[][]byte, x, y int32) {
-	(*tab)[y][x] = 0
 }

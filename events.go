@@ -9,9 +9,11 @@ func handleEvents(w *sdl.Window, game *stage, edit *edit) {
 			case *sdl.QuitEvent:
 				game.quit = true
 			case *sdl.MouseButtonEvent:
-				mouseButtonHandling(e, &game.tab, edit)
+				mouseButtonHandling(e, game, edit)
 			case *sdl.MouseMotionEvent:
-				mouseMotionHandling(e, &game.tab, edit)
+				mouseMotionHandling(e, game, edit)
+			case *sdl.MouseWheelEvent:
+				mouseWheelHandling(e, game)
 			case *sdl.KeyboardEvent:
 				keyboardHandling(e, w, game, edit)
 			}
@@ -26,7 +28,7 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.K_SPACE:
 			game.pause = !game.pause
 		case sdl.K_c:
-			game.tab = newTab(rows, columns)
+			game.tab = game.newTab()
 		case sdl.K_f:
 			toggleFullscreen(w)
 		case sdl.K_q:
@@ -46,7 +48,7 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.PRESSED:
 			edit.shift = true
 			x, y, _ := sdl.GetMouseState()
-			edit.shiftX, edit.shiftY = tabIndex(x, y)
+			edit.shiftX, edit.shiftY = game.tabIndex(x, y)
 		case sdl.RELEASED:
 			edit.shift = false
 		}
@@ -55,34 +57,34 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.PRESSED:
 			edit.ctrl = true
 			x, y, _ := sdl.GetMouseState()
-			edit.ctrlX, edit.ctrlY = tabIndex(x, y)
+			edit.ctrlX, edit.ctrlY = game.tabIndex(x, y)
 		case sdl.RELEASED:
 			edit.ctrl = false
 		}
 	}
 }
 
-func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
+func mouseButtonHandling(m *sdl.MouseButtonEvent, game *stage,
 	edit *edit) {
-	edit.lastX, edit.lastY = tabIndex(m.X, m.Y)
+	edit.lastX, edit.lastY = game.tabIndex(m.X, m.Y)
 	if m.State == sdl.PRESSED {
 		if !edit.shift && !edit.ctrl {
 			if edit.toggle {
-				toggleCell(tab, edit.lastX, edit.lastY)
+				toggleCell(&game.tab, edit.lastX, edit.lastY)
 			} else if m.Button == sdl.BUTTON_LEFT {
-				reviveCell(tab, edit.lastX, edit.lastY)
+				reviveCell(&game.tab, edit.lastX, edit.lastY)
 			} else if m.Button == sdl.BUTTON_RIGHT {
-				killCell(tab, edit.lastX, edit.lastY)
+				killCell(&game.tab, edit.lastX, edit.lastY)
 			}
 		}
 	} else if m.State == sdl.RELEASED {
 		if edit.shift || edit.ctrl {
 			if edit.toggle {
-				editRect(tab, edit, toggleCell)
+				editRect(&game.tab, edit, toggleCell)
 			} else if m.Button == sdl.BUTTON_LEFT {
-				editRect(tab, edit, reviveCell)
+				editRect(&game.tab, edit, reviveCell)
 			} else if m.Button == sdl.BUTTON_RIGHT {
-				editRect(tab, edit, killCell)
+				editRect(&game.tab, edit, killCell)
 			}
 			edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
 			edit.ctrlX, edit.ctrlY = edit.lastX, edit.lastY
@@ -90,23 +92,29 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, tab *[][]byte,
 	}
 }
 
-func mouseMotionHandling(m *sdl.MouseMotionEvent, tab *[][]byte,
+func mouseMotionHandling(m *sdl.MouseMotionEvent, game *stage,
 	edit *edit) {
-	x, y := tabIndex(m.X, m.Y)
+	x, y := game.tabIndex(m.X, m.Y)
 	if m.State == sdl.BUTTON_LEFT || m.State == 4 {
 		if x != edit.lastX || y != edit.lastY {
 			edit.lastX, edit.lastY = x, y
 			if !edit.shift && !edit.ctrl {
 				if edit.toggle {
-					toggleCell(tab, edit.lastX, edit.lastY)
+					toggleCell(&game.tab, edit.lastX, edit.lastY)
 				} else if m.State == sdl.BUTTON_LEFT {
-					reviveCell(tab, edit.lastX, edit.lastY)
+					reviveCell(&game.tab, edit.lastX, edit.lastY)
 				} else if m.State == 4 {
-					killCell(tab, edit.lastX, edit.lastY)
+					killCell(&game.tab, edit.lastX, edit.lastY)
 				}
 			}
 		}
 	} else {
 		edit.lastX, edit.lastY = x, y
+	}
+}
+
+func mouseWheelHandling(w *sdl.MouseWheelEvent, game *stage) {
+	if w.Y < 0 && game.timeEx > 0 || w.Y > 0 && game.timeEx < 600 {
+		game.timeEx += int64(w.Y) * 10
 	}
 }

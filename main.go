@@ -6,40 +6,40 @@ import (
 	"github.com/runaphox/cgol/conway"
 )
 
-const (
-	width    = 1920
-	height   = 1080
-	cellSize = 20
-	columns  = width / cellSize
-	rows     = height / cellSize
-	popul    = columns * rows
-)
-
 func main() {
 	var wrap sdlContext
 	var err error
+	var w, h, c int32 = 1920, 1080, 20
 
-	wrap.w, wrap.r, err = initSdl()
+	game := stage{
+		pause:    true,
+		wrap:     true,
+		width:    w,
+		height:   h,
+		cellSize: c,
+		columns:  w / c,
+		rows:     h / c,
+		timeEx:   60,
+	}
+	game.tab = game.newTab()
+
+	wrap.w, wrap.r, err = initSdl(&game)
 	if err != nil {
 		panic(err)
 	}
 	defer closeSdl(wrap)
 
-	game := stage{pause: true, wrap: true, tab: newTab(rows, columns)}
 	edit := edit{}
 
 	rgb := make(chan uint8, 3)
 	go randColor(rgb)
 	go handleEvents(wrap.w, &game, &edit)
-
+	go renderSimulation(wrap.r, &game, rgb, &edit)
 	for !game.quit {
 		start := time.Now()
-
-		draw(wrap.r, game.tab, rgb, &edit)
 		if !game.pause {
 			game.tab = conway.Update(game.tab, game.wrap)
 		}
-
-		time.Sleep(start.Sub(time.Now()) + 32*time.Millisecond)
+		time.Sleep(start.Sub(time.Now()) + time.Duration(game.timeEx)*time.Millisecond)
 	}
 }
