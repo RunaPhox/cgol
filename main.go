@@ -35,6 +35,7 @@ func main() {
 	go randColor(rgb)
 	go handleEvents(wrap.w, &game, &edit)
 	go renderSimulation(wrap.r, &game, rgb, &edit)
+
 	for !game.quit {
 		start := time.Now()
 		if !game.pause {

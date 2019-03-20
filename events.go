@@ -48,7 +48,7 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.PRESSED:
 			edit.shift = true
 			x, y, _ := sdl.GetMouseState()
-			edit.shiftX, edit.shiftY = game.tabIndex(x, y)
+			edit.shiftP.x, edit.shiftP.y = game.tabIndex(x, y)
 		case sdl.RELEASED:
 			edit.shift = false
 		}
@@ -57,7 +57,7 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 		case sdl.PRESSED:
 			edit.ctrl = true
 			x, y, _ := sdl.GetMouseState()
-			edit.ctrlX, edit.ctrlY = game.tabIndex(x, y)
+			edit.ctrlP.x, edit.ctrlP.y = game.tabIndex(x, y)
 		case sdl.RELEASED:
 			edit.ctrl = false
 		}
@@ -66,19 +66,19 @@ func keyboardHandling(k *sdl.KeyboardEvent, w *sdl.Window,
 
 func mouseButtonHandling(m *sdl.MouseButtonEvent, game *stage,
 	edit *edit) {
-	edit.lastX, edit.lastY = game.tabIndex(m.X, m.Y)
+	edit.lastP.x, edit.lastP.y = game.tabIndex(m.X, m.Y)
 	if m.State == sdl.PRESSED {
 		if !edit.shift && !edit.ctrl {
 			if edit.toggle {
-				toggleCell(&game.tab, edit.lastX, edit.lastY)
+				toggleCell(&game.tab, edit.lastP.x, edit.lastP.y)
 			} else if m.Button == sdl.BUTTON_LEFT {
-				reviveCell(&game.tab, edit.lastX, edit.lastY)
+				reviveCell(&game.tab, edit.lastP.x, edit.lastP.y)
 			} else if m.Button == sdl.BUTTON_RIGHT {
-				killCell(&game.tab, edit.lastX, edit.lastY)
+				killCell(&game.tab, edit.lastP.x, edit.lastP.y)
 			}
 		}
 	} else if m.State == sdl.RELEASED {
-		if edit.shift || edit.ctrl {
+		if edit.shift && !edit.ctrl {
 			if edit.toggle {
 				editRect(&game.tab, edit, toggleCell)
 			} else if m.Button == sdl.BUTTON_LEFT {
@@ -86,8 +86,16 @@ func mouseButtonHandling(m *sdl.MouseButtonEvent, game *stage,
 			} else if m.Button == sdl.BUTTON_RIGHT {
 				editRect(&game.tab, edit, killCell)
 			}
-			edit.shiftX, edit.shiftY = edit.lastX, edit.lastY
-			edit.ctrlX, edit.ctrlY = edit.lastX, edit.lastY
+			edit.shiftP.x, edit.shiftP.y = edit.lastP.x, edit.lastP.y
+		} else if !edit.shift && edit.ctrl {
+			if edit.toggle {
+				editPlotLine(&game.tab, edit.lastP.x, edit.lastP.y, edit.ctrlP.x, edit.ctrlP.y, toggleCell)
+			} else if m.Button == sdl.BUTTON_LEFT {
+				editPlotLine(&game.tab, edit.lastP.x, edit.lastP.y, edit.ctrlP.x, edit.ctrlP.y, reviveCell)
+			} else if m.Button == sdl.BUTTON_RIGHT {
+				editPlotLine(&game.tab, edit.lastP.x, edit.lastP.y, edit.ctrlP.x, edit.ctrlP.y, killCell)
+			}
+			edit.ctrlP.x, edit.ctrlP.y = edit.lastP.x, edit.lastP.y
 		}
 	}
 }
@@ -96,20 +104,20 @@ func mouseMotionHandling(m *sdl.MouseMotionEvent, game *stage,
 	edit *edit) {
 	x, y := game.tabIndex(m.X, m.Y)
 	if m.State == sdl.BUTTON_LEFT || m.State == 4 {
-		if x != edit.lastX || y != edit.lastY {
-			edit.lastX, edit.lastY = x, y
+		if x != edit.lastP.x || y != edit.lastP.y {
+			edit.lastP.x, edit.lastP.y = x, y
 			if !edit.shift && !edit.ctrl {
 				if edit.toggle {
-					toggleCell(&game.tab, edit.lastX, edit.lastY)
+					toggleCell(&game.tab, edit.lastP.x, edit.lastP.y)
 				} else if m.State == sdl.BUTTON_LEFT {
-					reviveCell(&game.tab, edit.lastX, edit.lastY)
+					reviveCell(&game.tab, edit.lastP.x, edit.lastP.y)
 				} else if m.State == 4 {
-					killCell(&game.tab, edit.lastX, edit.lastY)
+					killCell(&game.tab, edit.lastP.x, edit.lastP.y)
 				}
 			}
 		}
 	} else {
-		edit.lastX, edit.lastY = x, y
+		edit.lastP.x, edit.lastP.y = x, y
 	}
 }
 
